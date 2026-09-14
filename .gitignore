@@ -9,3 +9,4 @@
 *_IGCSE_*/
 *_O-Level_*/
 *.zip
+__pycache__/
