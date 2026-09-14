@@ -1,71 +1,85 @@
 import re
+import sys
+import threading
 import time
-from pathlib import Path
 
 import requests
 
-from .constants import DELAY, HEADERS
+from .constants import DELAY, DYNAMICOPERS_BASE, HEADERS
+from .pastpapers_co import find_file
+
+_dynamic_dead_lock = threading.Lock()
+_dynamic_failures = 0
+_DYNAMIC_FAILURE_LIMIT = 5
+
+
+def _dynamic_is_dead():
+    return _dynamic_failures >= _DYNAMIC_FAILURE_LIMIT
+
+
+def _record_dynamic_failure():
+    global _dynamic_failures
+    with _dynamic_dead_lock:
+        _dynamic_failures += 1
+
+
+def _try_url(url, path, label="", referer=None):
+    headers = dict(HEADERS)
+    headers["Accept"] = "application/pdf,*/*;q=0.8"
+    if referer:
+        headers["Referer"] = referer
+    try:
+        r = requests.get(url, headers=headers, timeout=60)
+    except Exception as e:
+        if label:
+            print(f"    [{label}] {url} -> EXCEPTION {e}", file=sys.stderr)
+        return False
+    if r.status_code != 200:
+        if label:
+            print(f"    [{label}] {url} -> HTTP {r.status_code}", file=sys.stderr)
+        return False
+    data = r.content
+    if len(data) >= 2000 and data.startswith(b"%PDF"):
+        path.write_bytes(data)
+        return True
+    if label:
+        print(
+            f"    [{label}] {url} -> HTTP 200 but not a valid PDF "
+            f"({len(data)} bytes, starts with {data[:20]!r})",
+            file=sys.stderr,
+        )
+    return False
 
 
 def download_one(name, url, folder, code):
     path = folder / name
     if path.exists() and path.stat().st_size > 2000:
         return f"skip {name}"
-    try:
-        r = requests.get(url, headers=HEADERS, timeout=60)
-        r.raise_for_status()
-        data = r.content
-        if len(data) >= 2000 and data.startswith(b"%PDF"):
-            path.write_bytes(data)
-            time.sleep(DELAY)
-            return f"get  {name}"
-    except Exception:
-        pass
-    try:
-        fb1 = f"https://dynamicpapers.com/wp-content/uploads/2015/09/{name}"
-        r2 = requests.get(fb1, headers=HEADERS, timeout=60)
-        if (
-            r2.status_code == 200
-            and r2.content.startswith(b"%PDF")
-            and len(r2.content) > 2000
+
+    if not url.startswith("https://dummy/") and _try_url(url, path, "primary"):
+        time.sleep(DELAY)
+        return f"get  {name}"
+
+    m = re.match(r"(\d{4})_([swm])(\d{2})_(qp|ms)_(\d+)\.pdf", name)
+    if m:
+        c, season, yy, _kind, _paper = m.groups()
+        year = 2000 + int(yy)
+        real_url = find_file(c, year, season, name)
+        if real_url is None:
+            print(
+                f"    [pastpapers.co] {name} -> not found in session listing",
+                file=sys.stderr,
+            )
+        elif _try_url(
+            real_url, path, "pastpapers.co", referer="https://pastpapers.co/"
         ):
-            path.write_bytes(r2.content)
+            time.sleep(DELAY)
+            return f"get  {name} (pastpapers.co)"
+
+    if not _dynamic_is_dead():
+        if _try_url(f"{DYNAMICOPERS_BASE}/{name}", path, "dynamic"):
             time.sleep(DELAY)
             return f"get  {name} (dynamic)"
-    except Exception:
-        pass
-    try:
-        m = re.match(r"(\d{4})_([swm])(\d{2})_(qp|ms)_(\d+)\.pdf", name)
-        if m:
-            c, season, yy, kind, paper = m.groups()
-            year = 2000 + int(yy)
-            season_map = {"s": "May-June", "w": "Oct-Nov", "m": "March"}
-            season_name = season_map.get(season, "May-June")
-            level = "O-Level" if c in ("5070", "5054", "4024", "4037") else "IGCSE"
-            subj_map = {
-                "0620": "Chemistry-0620",
-                "0625": "Physics-0625",
-                "0580": "Mathematics-0580",
-                "0606": "Additional-Mathematics-0606",
-                "5070": "Chemistry-5070",
-                "5054": "Physics-5054",
-                "4024": "Mathematics-D-4024",
-                "4037": "Additional-Mathematics-4037",
-            }
-            subj = subj_map.get(c, f"Chemistry-{c}")
-            fb2 = (
-                f"https://pastpapers.co/caie/{level}/{subj}/{year}-{season_name}/{name}"
-            )
-            r3 = requests.get(fb2, headers=HEADERS, timeout=60)
-            if (
-                r3.status_code == 200
-                and r3.headers.get("content-type", "").startswith("application/pdf")
-                and r3.content.startswith(b"%PDF")
-                and len(r3.content) > 2000
-            ):
-                path.write_bytes(r3.content)
-                time.sleep(DELAY)
-                return f"get  {name} (pastpapers.co)"
-    except Exception:
-        pass
+        _record_dynamic_failure()
+
     return f"bad  {name}"

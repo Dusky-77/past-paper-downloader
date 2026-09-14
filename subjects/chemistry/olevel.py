@@ -4,8 +4,14 @@ from common.runner import run_subject
 
 def run(year_from, year_to, dry_run):
     extra = [
-        ("2025-Oct-Nov", f"{BASE}/papers/caie/o-level-chemistry-5070-2025-oct-nov"),
-        ("2024-Oct-Nov", f"{BASE}/papers/caie/o-level-chemistry-5070-2024-oct-nov"),
+        (
+            "2025-Oct-Nov",
+            f"{BASE}/papers/caie/o-level-chemistry-5070-2025-oct-nov2025-oct-nov",
+        ),
+        (
+            "2024-Oct-Nov",
+            f"{BASE}/papers/caie/o-level-chemistry-5070-chemistry-50702024-oct-nov",
+        ),
     ]
     run_subject(
         code="5070",

@@ -19,4 +19,16 @@ def run_subject(
         for paper in papers:
             collect_and_merge("qp", paper, year_from, year_to, code, out_dir)
             collect_and_merge("ms", paper, year_from, year_to, code, out_dir)
+        _report_missing(out_dir, code)
     print("\ndone")
+
+
+def _report_missing(out_dir, code):
+    log_path = out_dir / "missing.log"
+    if not log_path.exists():
+        print(f"\n{code}: coverage report -> no gaps recorded")
+        return
+    lines = [l for l in log_path.read_text().splitlines() if l.strip()]
+    print(f"\n{code}: coverage report -> {len(lines)} files never obtained")
+    for l in lines:
+        print(f"  {l}")

@@ -6,11 +6,29 @@ from .constants import MAX_WORKERS
 from .download import download_one
 from .pdfs import get_pdfs
 
+MARCH_VARIANTS = (2,)
+MAIN_VARIANTS = (1, 2, 3)
+
 
 def session_already_done(folder, expected_count):
     if not folder.exists():
         return False
     return len(list(folder.glob("*.pdf"))) >= expected_count * 0.8
+
+
+def _fabricate(code, season, yy, papers):
+    # 0625 before 2016 never had modern Paper 4
+    if code == "0625" and int(yy) < 16:
+        papers = [p for p in papers if p != 4]
+    pdfs = []
+    for p in papers:
+        for kind in ("qp", "ms"):
+            # March sessions only have variant 2
+            variants = (2,) if season == "m" else (1, 2, 3)
+            for v in variants:
+                fname = f"{code}_{season}{yy}_{kind}_{p}{v}.pdf"
+                pdfs.append((fname, f"https://dummy/{fname}"))
+    return pdfs
 
 
 def process_session(name, surl, code, year_from, year_to, dry_run, out_dir, papers):
@@ -31,14 +49,10 @@ def process_session(name, surl, code, year_from, year_to, dry_run, out_dir, pape
     )
     expected_yy = f"{year % 100:02d}"
     good = [p for p in pdfs if f"_{expected_season}{expected_yy}_" in p[0]]
-    if len(good) < 4 or (code == "0625" and year < 2016):
+    expected_count = len(papers) * 2 * (1 if expected_season == "m" else 3)
+    if len(good) < 4:
         print(f"{name}: PapaCambridge incomplete – generating correct filenames")
-        pdfs = []
-        for p in papers:
-            for kind in ("qp", "ms"):
-                for v in (1, 2, 3):
-                    fname = f"{code}_{expected_season}{expected_yy}_{kind}_{p}{v}.pdf"
-                    pdfs.append((fname, f"https://dummy/{fname}"))
+        pdfs = _fabricate(code, expected_season, expected_yy, papers)
     else:
         pdfs = good
     if not pdfs:
@@ -55,5 +69,13 @@ def process_session(name, surl, code, year_from, year_to, dry_run, out_dir, pape
         return
     with ThreadPoolExecutor(max_workers=MAX_WORKERS) as ex:
         futures = {ex.submit(download_one, n, u, folder, code): n for n, u in pdfs}
-        for fut in as_completed(futures):
-            print(fut.result())
+        results = [fut.result() for fut in as_completed(futures)]
+    for r in sorted(results):
+        print(r)
+    bad = [r for r in results if r.startswith("bad")]
+    if bad:
+        bad_names = [r.split()[1] for r in bad]
+        print(f"{name}: {len(bad)}/{len(results)} missing -> {bad_names}")
+        with open(out_dir / "missing.log", "a") as f:
+            for n in bad_names:
+                f.write(f"{name}: {n}\n")
