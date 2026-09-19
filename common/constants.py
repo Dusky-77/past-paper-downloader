@@ -16,7 +16,7 @@ HEADERS = {
     "Upgrade-Insecure-Requests": "1",
 }
 
-WANT = {"qp", "ms"}
+WANT = {"er"}  # {"er", "qp", "ms"}
 
 DYNAMICOPERS_BASE = "https://dynamicpapers.com/wp-content/uploads/2015/09"
 PASTPAPERS_CO_BASE = "https://pastpapers.co"

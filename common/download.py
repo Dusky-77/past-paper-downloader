@@ -60,7 +60,7 @@ def download_one(name, url, folder, code):
         time.sleep(DELAY)
         return f"get  {name}"
 
-    m = re.match(r"(\d{4})_([swm])(\d{2})_(qp|ms)_(\d+)\.pdf", name)
+    m = re.match(r"(\d{4})_([swm])(\d{2})_(qp|ms|er)(?:_(\d+))?\.pdf", name)
     if m:
         c, season, yy, _kind, _paper = m.groups()
         year = 2000 + int(yy)

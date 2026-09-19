@@ -1,6 +1,7 @@
 from pathlib import Path
 
-from .merge import collect_and_merge
+from .constants import WANT
+from .merge import collect_and_merge, collect_and_merge_er
 from .process import process_session
 from .sessions import get_sessions
 
@@ -16,10 +17,12 @@ def run_subject(
         process_session(sname, surl, code, year_from, year_to, dry_run, out_dir, papers)
     if not dry_run:
         print("\nmerging per paper...")
-        for paper in papers:
-            collect_and_merge("qp", paper, year_from, year_to, code, out_dir)
-            collect_and_merge("ms", paper, year_from, year_to, code, out_dir)
-        _report_missing(out_dir, code)
+        for kind in WANT:
+            if kind in ("qp", "ms"):
+                for paper in papers:
+                    collect_and_merge(kind, paper, year_from, year_to, code, out_dir)
+            elif kind == "er":
+                collect_and_merge_er(year_from, year_to, code, out_dir)
     print("\ndone")
 
 

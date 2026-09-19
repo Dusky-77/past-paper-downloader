@@ -2,7 +2,7 @@ import re
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
-from .constants import MAX_WORKERS
+from .constants import MAX_WORKERS, WANT
 from .download import download_one
 from .pdfs import get_pdfs
 
@@ -16,18 +16,21 @@ def session_already_done(folder, expected_count):
     return len(list(folder.glob("*.pdf"))) >= expected_count * 0.8
 
 
-def _fabricate(code, season, yy, papers):
-    # 0625 before 2016 never had modern Paper 4
-    if code == "0625" and int(yy) < 16:
+def _fabricate(code, season, expected_yy, papers):
+    if code == "0625" and int(expected_yy) < 16:
         papers = [p for p in papers if p != 4]
     pdfs = []
+    kinds = [k for k in WANT if k in ("qp", "ms")]  # only paper-based kinds
     for p in papers:
-        for kind in ("qp", "ms"):
-            # March sessions only have variant 2
+        for kind in kinds:
             variants = (2,) if season == "m" else (1, 2, 3)
             for v in variants:
-                fname = f"{code}_{season}{yy}_{kind}_{p}{v}.pdf"
+                fname = f"{code}_{season}{expected_yy}_{kind}_{p}{v}.pdf"
                 pdfs.append((fname, f"https://dummy/{fname}"))
+    # ER is session-level (no paper number)
+    if "er" in WANT:
+        fname = f"{code}_{season}{expected_yy}_er.pdf"
+        pdfs.append((fname, f"https://dummy/{fname}"))
     return pdfs
 
 
