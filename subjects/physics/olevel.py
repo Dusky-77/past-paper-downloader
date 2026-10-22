@@ -1,7 +1,7 @@
 from common.runner import run_subject
 
 
-def run(year_from, year_to, dry_run):
+def run(year_from, year_to, dry_run, only_source=None):
     run_subject(
         code="5054",
         name="O-Level Physics",
@@ -10,4 +10,5 @@ def run(year_from, year_to, dry_run):
         year_from=year_from,
         year_to=year_to,
         dry_run=dry_run,
+        only_source=only_source,
     )

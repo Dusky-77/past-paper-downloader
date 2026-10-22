@@ -6,11 +6,14 @@ import time
 import requests
 
 from .constants import DELAY, DYNAMICOPERS_BASE, HEADERS
-from .pastpapers_co import find_file
+from .pastpapers_co import find_file as ppco_find
+from .xtremepapers import find_file as xtreme_find
 
 _dynamic_dead_lock = threading.Lock()
 _dynamic_failures = 0
 _DYNAMIC_FAILURE_LIMIT = 5
+
+SOURCES = ("primary", "pastpapers.co", "dynamic", "xtremepapers")
 
 
 def _dynamic_is_dead():
@@ -51,35 +54,84 @@ def _try_url(url, path, label="", referer=None):
     return False
 
 
-def download_one(name, url, folder, code):
+def _parse_name(name):
+    m = re.match(r"(\d{4})_([swm])(\d{2})_(qp|ms|er)(?:_(\d+))?\.pdf", name)
+    if not m:
+        return None
+    c, season, yy, kind, paper = m.groups()
+    return c, season, 2000 + int(yy), kind, paper
+
+
+def download_one(name, url, folder, code, only_source=None):
     path = folder / name
     if path.exists() and path.stat().st_size > 2000:
         return f"skip {name}"
 
-    if not url.startswith("https://dummy/") and _try_url(url, path, "primary"):
-        time.sleep(DELAY)
-        return f"get  {name}"
+    parsed = _parse_name(name)
 
-    m = re.match(r"(\d{4})_([swm])(\d{2})_(qp|ms|er)(?:_(\d+))?\.pdf", name)
-    if m:
-        c, season, yy, _kind, _paper = m.groups()
-        year = 2000 + int(yy)
-        real_url = find_file(c, year, season, name)
-        if real_url is None:
+    def try_primary():
+        if url.startswith("https://dummy/"):
+            return False
+        return _try_url(url, path, "primary")
+
+    def try_ppco():
+        if not parsed:
+            return False
+        c, season, year, _, _ = parsed
+        real = ppco_find(c, year, season, name)
+        if real is None:
             print(
                 f"    [pastpapers.co] {name} -> not found in session listing",
                 file=sys.stderr,
             )
-        elif _try_url(
-            real_url, path, "pastpapers.co", referer="https://pastpapers.co/"
-        ):
-            time.sleep(DELAY)
-            return f"get  {name} (pastpapers.co)"
+            return False
+        return _try_url(real, path, "pastpapers.co", referer="https://pastpapers.co/")
 
-    if not _dynamic_is_dead():
-        if _try_url(f"{DYNAMICOPERS_BASE}/{name}", path, "dynamic"):
-            time.sleep(DELAY)
-            return f"get  {name} (dynamic)"
-        _record_dynamic_failure()
+    def try_dynamic():
+        if _dynamic_is_dead():
+            return False
+        ok = _try_url(f"{DYNAMICOPERS_BASE}/{name}", path, "dynamic")
+        if not ok:
+            _record_dynamic_failure()
+        return ok
 
+    def try_xtreme():
+        real = xtreme_find(code, name)
+        if real is None:
+            print(
+                f"    [xtremepapers] {name} -> not found in subject listing",
+                file=sys.stderr,
+            )
+            return False
+        return _try_url(
+            real, path, "xtremepapers", referer="https://papers.xtremepape.rs/"
+        )
+
+    order = {
+        "primary": try_primary,
+        "pastpapers.co": try_ppco,
+        "dynamic": try_dynamic,
+        "xtremepapers": try_xtreme,
+    }
+
+    if only_source:
+        if only_source not in order:
+            return f"bad  {name} (unknown source {only_source})"
+        if order[only_source]():
+            time.sleep(DELAY)
+            return f"get  {name} ({only_source})"
+        return f"bad  {name}"
+
+    if try_primary():
+        time.sleep(DELAY)
+        return f"get  {name}"
+    if try_ppco():
+        time.sleep(DELAY)
+        return f"get  {name} (pastpapers.co)"
+    if try_dynamic():
+        time.sleep(DELAY)
+        return f"get  {name} (dynamic)"
+    if try_xtreme():
+        time.sleep(DELAY)
+        return f"get  {name} (xtremepapers)"
     return f"bad  {name}"

@@ -30,14 +30,16 @@ def _fetch_links(url, trace):
     try:
         r = requests.get(url, headers=HEADERS, timeout=30)
     except Exception as e:
-        trace.append(f"{url} -> EXCEPTION {e}")
+        trace.append(f"{url} -----> EXCEPTION {e}")
         return []
     if r.status_code != 200:
-        trace.append(f"{url} -> HTTP {r.status_code}")
+        trace.append(f"{url} -----> HTTP {r.status_code}")
         return []
     body_lower = r.text.lower()
     if any(marker in body_lower for marker in _CHALLENGE_MARKERS):
-        trace.append(f"{url} -> HTTP 200 but anti-bot challenge page, not real content")
+        trace.append(
+            f"{url} -----> HTTP 200 but anti-bot challenge page, not real content"
+        )
         return []
     soup = BeautifulSoup(r.text, "html.parser")
     out = []
@@ -46,9 +48,11 @@ def _fetch_links(url, trace):
         if href.endswith(".pdf"):
             out.append(urljoin(PASTPAPERS_CO_BASE, href))
     if not out:
-        trace.append(f"{url} -> HTTP 200, 0 pdf links, page length {len(r.text)} chars")
+        trace.append(
+            f"{url} -----> HTTP 200, 0 pdf links, page length {len(r.text)} chars"
+        )
     else:
-        trace.append(f"{url} -> HTTP 200, {len(out)} pdf links")
+        trace.append(f"{url} -----> HTTP 200, {len(out)} pdf links")
     return out
 
 

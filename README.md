@@ -6,6 +6,8 @@ Personal tool to download and compile Cambridge IGCSE / O-Level past papers + ma
 
 | Code | Subject                        |
 | ---- | ------------------------------ |
+| 0610 | IGCSE Biology                  |
+| 5090 | O-Level Biology                |
 | 0620 | IGCSE Chemistry                |
 | 5070 | O-Level Chemistry              |
 | 0625 | IGCSE Physics                  |
@@ -17,12 +19,14 @@ Personal tool to download and compile Cambridge IGCSE / O-Level past papers + ma
 
 ## Features
 
-- Downloads only QP + MS
+- Downloads only QP + MS (or ER depending on WANT in constants)
 - Skips already-downloaded sessions
-- Multithreaded (4 workers) with polite delays
-- Automatic fallbacks (DynamicPapers → pastpapers.co) when PapaCambridge is incomplete
-- Merges into per-paper Yearlies (`2010-2026 0620 P1 QP Yearlies.pdf` etc.)
-- Interactive: choose subject code, year range, dry-run
+- Multithreaded with polite delays
+- Automatic fallbacks: PapaCambridge -> pastpapers.co -> DynamicPapers -> xtremepapers
+- Mode 2: single year from one chosen source only (no fallback chain)
+- Year-aware paper sets (no P4 pre-2016 for 0610/0620/0625; 5090 switches 6->4 in 2023)
+- Merges into per-paper Yearlies
+- Interactive: choose subject code, mode, years / source, dry-run
 
 ## Setup
 
@@ -36,51 +40,18 @@ pip install -r requirements.txt
 python main.py
 ```
 
-1. Enter subject code (e.g. `0625`)
-2. Enter year range (e.g. `2010` → `2026`)
-3. Choose dry-run (`y`/`n`)
-
-Output folders are created next to `main.py`:
-
-```
-0620_IGCSE_Chemistry/
-0625_IGCSE_Physics/
-5070_O-Level_Chemistry/
-...
-```
-
-## Project structure
-
-```
-├── main.py
-├── requirements.txt
-├── common/
-│   ├── constants.py
-│   ├── sessions.py
-│   ├── pdfs.py
-│   ├── download.py
-│   ├── process.py
-│   ├── merge.py
-│   └── runner.py
-└── subjects/
-    ├── chemistry/
-    │   ├── igcse.py
-    │   └── olevel.py
-    ├── physics/
-    │   ├── igcse.py
-    │   └── olevel.py
-    ├── mathematics/
-    │   ├── igcse.py
-    │   └── olevel.py
-    └── additional_mathematics/
-        ├── igcse.py
-        └── olevel.py
-```
+1. Enter subject code (e.g. `0610`)
+2. Choose mode:
+   - 1: full year range with all 4 fallbacks
+   - 2: one specific year from one specific puller only
+3. If mode 2: pick year + source (1 primary / 2 pastpapers.co / 3 dynamic / 4 xtremepapers)
+4. Dry-run y/n
 
 ## Notes
 
-- For personal use only. Respect the source sites’ rate limits.
-- Increase `MAX_WORKERS` only if you also increase `DELAY` in `common/constants.py`.
+- For personal use only. Respect the source sites rate limits.
+- Increase MAX_WORKERS only if you also increase DELAY in common/constants.py.
+- xtremepapers uses a single flat subject listing (all years in one page) so the first hit for a subject caches everything.
 
 ## License
 

@@ -7,14 +7,24 @@ from .sessions import get_sessions
 
 
 def run_subject(
-    code, name, path, papers, year_from, year_to, dry_run, extra_sessions=None
+    code,
+    name,
+    path,
+    papers,
+    year_from,
+    year_to,
+    dry_run,
+    extra_sessions=None,
+    only_source=None,
 ):
     out_dir = Path(f"{code}_{name.replace(' ', '_')}")
     out_dir.mkdir(exist_ok=True)
     sessions = get_sessions(path, extra_sessions)
     print(f"\nfound {len(sessions)} sessions")
     for sname, surl in sessions:
-        process_session(sname, surl, code, year_from, year_to, dry_run, out_dir, papers)
+        process_session(
+            sname, surl, code, year_from, year_to, dry_run, out_dir, papers, only_source
+        )
     if not dry_run:
         print("\nmerging per paper...")
         for kind in WANT:

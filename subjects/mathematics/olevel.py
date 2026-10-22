@@ -2,7 +2,7 @@ from common.constants import BASE
 from common.runner import run_subject
 
 
-def run(year_from, year_to, dry_run):
+def run(year_from, year_to, dry_run, only_source=None):
     extra = [
         (
             "2024-Oct-Nov",
@@ -13,7 +13,6 @@ def run(year_from, year_to, dry_run):
             f"{BASE}/papers/caie/o-level-mathematics-d-calculator-version-4024-may-june-2020",
         ),
     ]
-
     run_subject(
         code="4024",
         name="O-Level Mathematics",
@@ -23,4 +22,5 @@ def run(year_from, year_to, dry_run):
         year_to=year_to,
         dry_run=dry_run,
         extra_sessions=extra,
+        only_source=only_source,
     )

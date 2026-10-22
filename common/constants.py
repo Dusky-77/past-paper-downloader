@@ -16,10 +16,11 @@ HEADERS = {
     "Upgrade-Insecure-Requests": "1",
 }
 
-WANT = {"er"}  # {"er", "qp", "ms"}
+WANT = {"ms", "qp"}  # {"er", "qp", "ms"}
 
 DYNAMICOPERS_BASE = "https://dynamicpapers.com/wp-content/uploads/2015/09"
 PASTPAPERS_CO_BASE = "https://pastpapers.co"
+XTREME_BASE = "https://papers.xtremepape.rs"
 
 PASTPAPERS_CO_SUBJECTS = {
     "0620": ("igcse", "chemistry-0620"),
@@ -30,4 +31,19 @@ PASTPAPERS_CO_SUBJECTS = {
     "4024": ("o-level", "Mathematics-D-4024"),
     "0606": ("igcse", "mathematics-0606"),
     "4037": ("o-level", "mathematics-additional-4037"),
+    "0610": ("igcse", "biology-0610"),
+    "5090": ("o-level", "biology-5090"),
+}
+
+XTREME_SUBJECTS = {
+    "0620": ("IGCSE", "Chemistry (0620)"),
+    "5070": ("O Level", "Chemistry (5070)"),
+    "0625": ("IGCSE", "Physics (0625)"),
+    "5054": ("O Level", "Physics (5054)"),
+    "0580": ("IGCSE", "Mathematics (0580)"),
+    "4024": ("O Level", "Mathematics D (4024)"),
+    "0606": ("IGCSE", "Mathematics - Additional (0606)"),
+    "4037": ("O Level", "Mathematics - Additional (4037)"),
+    "0610": ("IGCSE", "Biology (0610)"),
+    "5090": ("O Level", "Biology (5090)"),
 }
