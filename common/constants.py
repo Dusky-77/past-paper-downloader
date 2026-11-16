@@ -1,8 +1,7 @@
 BASE = "https://pastpapers.papacambridge.com"
-DELAY = 1.9
+DELAY = 1
 MAX_WORKERS = 6
 
-# yea i used ai for these headers lol
 HEADERS = {
     "User-Agent": (
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
@@ -16,11 +15,12 @@ HEADERS = {
     "Upgrade-Insecure-Requests": "1",
 }
 
-WANT = {"ms", "qp"}  # {"er", "qp", "ms"}
+WANT = {"er"}
 
 DYNAMICOPERS_BASE = "https://dynamicpapers.com/wp-content/uploads/2015/09"
 PASTPAPERS_CO_BASE = "https://pastpapers.co"
 XTREME_BASE = "https://papers.xtremepape.rs"
+BESTEXAMHELP_BASE = "https://bestexamhelp.com"
 
 PASTPAPERS_CO_SUBJECTS = {
     "0620": ("igcse", "chemistry-0620"),
@@ -46,4 +46,17 @@ XTREME_SUBJECTS = {
     "4037": ("O Level", "Mathematics - Additional (4037)"),
     "0610": ("IGCSE", "Biology (0610)"),
     "5090": ("O Level", "Biology (5090)"),
+}
+
+BESTEXAMHELP_SUBJECTS = {
+    "0610": ("cambridge-igcse", "biology-0610"),
+    "5090": ("cambridge-o-level", "biology-5090"),
+    "0620": ("cambridge-igcse", "chemistry-0620"),
+    "5070": ("cambridge-o-level", "chemistry-5070"),
+    "0625": ("cambridge-igcse", "physics-0625"),
+    "5054": ("cambridge-o-level", "physics-5054"),
+    "0580": ("cambridge-igcse", "mathematics-0580"),
+    "4024": ("cambridge-o-level", "mathematics-d-4024"),
+    "0606": ("cambridge-igcse", "mathematics-additional-0606"),
+    "4037": ("cambridge-o-level", "mathematics-additional-4037"),
 }

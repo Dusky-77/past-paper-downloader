@@ -23,10 +23,11 @@ SUBJECTS = {
 }
 
 SOURCES = {
-    "1": "primary",
+    "1": "bestexamhelp",
     "2": "pastpapers.co",
-    "3": "dynamic",
-    "4": "xtremepapers",
+    "3": "xtremepapers",
+    "4": "dynamic",
+    "5": "primary",
 }
 
 
@@ -41,17 +42,18 @@ def main():
     name, module = SUBJECTS[code]
     print(f"Selected: {name}")
     print("\nModes:")
-    print("  1  Full range (all fallbacks: primary -> pastpapers.co -> dynamic -> xtremepapers)")
+    print("  1  Full range (fallbacks: bestexamhelp -> pastpapers.co -> xtremepapers -> dynamic -> papacambridge)")
     print("  2  Single year from one specific source only")
     mode = input("Mode (1/2): ").strip()
     if mode == "2":
         year = int(input("Year (e.g. 2024): ").strip())
         print("\nSources:")
-        print("  1  primary (PapaCambridge)")
+        print("  1  bestexamhelp (primary)")
         print("  2  pastpapers.co")
-        print("  3  dynamic (DynamicPapers)")
-        print("  4  xtremepapers")
-        src = input("Source (1-4): ").strip()
+        print("  3  xtremepapers")
+        print("  4  dynamic (DynamicPapers)")
+        print("  5  primary (PapaCambridge)")
+        src = input("Source (1-5): ").strip()
         if src not in SOURCES:
             print("Unknown source")
             return

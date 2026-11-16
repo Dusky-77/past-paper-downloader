@@ -5,6 +5,7 @@ import time
 
 import requests
 
+from .bestexamhelp import find_file as beh_find
 from .constants import DELAY, DYNAMICOPERS_BASE, HEADERS
 from .pastpapers_co import find_file as ppco_find
 from .xtremepapers import find_file as xtreme_find
@@ -13,7 +14,7 @@ _dynamic_dead_lock = threading.Lock()
 _dynamic_failures = 0
 _DYNAMIC_FAILURE_LIMIT = 5
 
-SOURCES = ("primary", "pastpapers.co", "dynamic", "xtremepapers")
+SOURCES = ("bestexamhelp", "pastpapers.co", "xtremepapers", "dynamic", "primary")
 
 
 def _dynamic_is_dead():
@@ -69,10 +70,20 @@ def download_one(name, url, folder, code, only_source=None):
 
     parsed = _parse_name(name)
 
-    def try_primary():
-        if url.startswith("https://dummy/"):
+    def try_bestexamhelp():
+        if not parsed:
             return False
-        return _try_url(url, path, "primary")
+        c, season, year, _, _ = parsed
+        real = beh_find(c, year, season, name)
+        if real is None:
+            print(
+                f"    [bestexamhelp] {name} -> not found",
+                file=sys.stderr,
+            )
+            return False
+        return _try_url(
+            real, path, "bestexamhelp", referer="https://bestexamhelp.com/"
+        )
 
     def try_ppco():
         if not parsed:
@@ -87,14 +98,6 @@ def download_one(name, url, folder, code, only_source=None):
             return False
         return _try_url(real, path, "pastpapers.co", referer="https://pastpapers.co/")
 
-    def try_dynamic():
-        if _dynamic_is_dead():
-            return False
-        ok = _try_url(f"{DYNAMICOPERS_BASE}/{name}", path, "dynamic")
-        if not ok:
-            _record_dynamic_failure()
-        return ok
-
     def try_xtreme():
         real = xtreme_find(code, name)
         if real is None:
@@ -107,11 +110,25 @@ def download_one(name, url, folder, code, only_source=None):
             real, path, "xtremepapers", referer="https://papers.xtremepape.rs/"
         )
 
+    def try_dynamic():
+        if _dynamic_is_dead():
+            return False
+        ok = _try_url(f"{DYNAMICOPERS_BASE}/{name}", path, "dynamic")
+        if not ok:
+            _record_dynamic_failure()
+        return ok
+
+    def try_primary():
+        if url.startswith("https://dummy/"):
+            return False
+        return _try_url(url, path, "primary")
+
     order = {
-        "primary": try_primary,
+        "bestexamhelp": try_bestexamhelp,
         "pastpapers.co": try_ppco,
-        "dynamic": try_dynamic,
         "xtremepapers": try_xtreme,
+        "dynamic": try_dynamic,
+        "primary": try_primary,
     }
 
     if only_source:
@@ -122,16 +139,9 @@ def download_one(name, url, folder, code, only_source=None):
             return f"get  {name} ({only_source})"
         return f"bad  {name}"
 
-    if try_primary():
-        time.sleep(DELAY)
-        return f"get  {name}"
-    if try_ppco():
-        time.sleep(DELAY)
-        return f"get  {name} (pastpapers.co)"
-    if try_dynamic():
-        time.sleep(DELAY)
-        return f"get  {name} (dynamic)"
-    if try_xtreme():
-        time.sleep(DELAY)
-        return f"get  {name} (xtremepapers)"
+    for src in SOURCES:
+        if order[src]():
+            time.sleep(DELAY)
+            label = "" if src == "bestexamhelp" else f" ({src})"
+            return f"get  {name}{label}"
     return f"bad  {name}"
